@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PyQuest — learn Python by doing</title>
+<meta name="description" content="A free, gamified Python course that runs entirely in your browser. No account, no paywall.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBF6EC; --card:#FFFFFF; --ink:#1E2B22; --ink-soft:#5B6A60;
+  --pine:#16624A; --pine-deep:#0E4A37; --pine-soft:#E3EFE8;
+  --gold:#F5B81F; --gold-deep:#C98F06; --gold-soft:#FCF0D2;
+  --chili:#D4452C; --chili-soft:#FBE7E2;
+  --mist:#ECE3D2; --code-bg:#15201B; --code-ink:#E8F2EC;
+  --radius:18px; --shadow:0 2px 10px rgba(30,43,34,.08), 0 10px 28px rgba(30,43,34,.06);
+}
+*{box-sizing:border-box; margin:0; padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:17px; line-height:1.55; min-height:100vh;
+}
+.wrap{max-width:680px; margin:0 auto; padding:0 16px 130px}
+h1,h2,h3{font-family:"Bricolage Grotesque","Atkinson Hyperlegible",system-ui,sans-serif}
+code, pre, textarea.editor, .console{font-family:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+p code, li code, .task code, .quiz-opts code{background:var(--pine-soft); color:var(--pine-deep); padding:1px 6px; border-radius:6px; font-size:.88em}
+button{font:inherit; cursor:pointer; border:none; color:inherit}
+button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+@media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important} }
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky; top:0; z-index:40; background:rgba(251,246,236,.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--mist)}
+.topbar-inner{max-width:680px; margin:0 auto; padding:10px 16px; display:flex; align-items:center; gap:10px}
+.logo{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.25rem; letter-spacing:-.02em; color:var(--pine-deep); display:flex; align-items:center; gap:7px}
+.chips{margin-left:auto; display:flex; gap:7px}
+.chip{display:flex; align-items:center; gap:5px; background:var(--card); border:1.5px solid var(--mist); border-radius:999px; padding:4px 11px; font-weight:700; font-size:.82rem; white-space:nowrap}
+.chip .v{font-variant-numeric:tabular-nums}
+.chip.xp{border-color:var(--gold); background:var(--gold-soft)}
+#xpChip.bump{animation:bump .45s ease}
+@keyframes bump{40%{transform:scale(1.18)}}
+
+/* ---------- engine pill ---------- */
+.engine{display:flex; align-items:center; gap:8px; margin:14px 0 4px; font-size:.82rem; color:var(--ink-soft)}
+.dot{width:9px; height:9px; border-radius:50%; background:var(--gold); flex:none}
+.dot.ready{background:var(--pine)} .dot.err{background:var(--chili)}
+.dot.loading{animation:pulse 1.1s infinite ease-in-out}
+@keyframes pulse{50%{opacity:.35}}
+
+/* ---------- home ---------- */
+.hero{padding:24px 0 6px}
+.hero h1{font-size:clamp(1.7rem,6vw,2.3rem); font-weight:800; letter-spacing:-.02em; line-height:1.12}
+.hero h1 em{font-style:normal; color:var(--pine)}
+.hero p{color:var(--ink-soft); margin-top:8px; max-width:48ch}
+.tabs{display:flex; gap:8px; margin-top:18px}
+.tab{background:var(--card); border:1.5px solid var(--mist); color:var(--ink-soft); font-weight:800; font-size:.88rem; border-radius:999px; padding:8px 18px}
+.tab.on{background:var(--ink); border-color:var(--ink); color:var(--paper)}
+
+.cert-banner{
+  margin-top:20px; background:linear-gradient(120deg, var(--gold-soft), #FFF8E4);
+  border:1.5px solid var(--gold); border-radius:var(--radius); padding:18px 20px;
+  display:flex; align-items:center; gap:14px; box-shadow:var(--shadow);
+}
+.cert-banner .t{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.05rem}
+.cert-banner p{font-size:.88rem; color:var(--ink-soft)}
+.cert-banner button{margin-left:auto}
+
+.module{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); margin-top:20px; overflow:hidden; border:1px solid var(--mist)}
+.module-head{padding:18px 20px 14px; border-bottom:1px solid var(--mist)}
+.module.locked .module-head{border-bottom:none}
+.module-eyebrow{font-size:.72rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--gold-deep)}
+.module-head h2{font-size:1.25rem; font-weight:800; margin-top:3px}
+.progress-track{height:9px; background:var(--pine-soft); border-radius:99px; margin-top:12px; overflow:hidden}
+.progress-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--pine), #2E8B6A); border-radius:99px; transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.module-meta{font-size:.8rem; color:var(--ink-soft); margin-top:7px}
+.lesson-row{width:100%; display:flex; align-items:center; gap:13px; text-align:left; padding:15px 20px; background:none; border-bottom:1px solid var(--mist)}
+.lesson-row:last-child{border-bottom:none}
+.lesson-row:hover{background:var(--pine-soft)}
+.lesson-row:disabled{opacity:.45; cursor:not-allowed}
+.lesson-row:disabled:hover{background:none}
+.ring{width:34px; height:34px; flex:none; border-radius:50%; border:2.5px solid var(--mist); display:grid; place-items:center; font-size:.85rem; font-weight:800; color:var(--ink-soft); background:var(--card)}
+.ring.done{background:var(--pine); border-color:var(--pine); color:#fff}
+.ring.boss{border-color:var(--gold); color:var(--gold-deep)}
+.ring.boss.done{background:var(--gold); border-color:var(--gold); color:var(--ink)}
+.lesson-title{font-weight:700}
+.lesson-sub{font-size:.8rem; color:var(--ink-soft)}
+.lesson-xp{margin-left:auto; font-size:.78rem; font-weight:800; color:var(--gold-deep); white-space:nowrap}
+.module.locked{opacity:.78}
+.locked-note{padding:2px 20px 18px; font-size:.88rem; color:var(--ink-soft)}
+
+/* ---------- lesson view ---------- */
+.lesson-top{display:flex; align-items:center; gap:12px; padding:18px 0 6px}
+.btn-ghost{background:none; color:var(--pine-deep); font-weight:700; font-size:.9rem; padding:7px 10px; border-radius:10px}
+.btn-ghost:hover{background:var(--pine-soft)}
+.step-dots{display:flex; gap:6px; margin-left:auto}
+.sdot{width:8px; height:8px; border-radius:50%; background:var(--mist)}
+.sdot.on{background:var(--pine); transform:scale(1.25)}
+.sdot.past{background:#9DBFB0}
+.card{background:var(--card); border:1px solid var(--mist); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px 20px; margin-top:12px; animation:stepIn .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes stepIn{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none}}
+.card h3{font-size:1.22rem; font-weight:800; letter-spacing:-.01em}
+.card .learn-body{margin-top:10px; display:flex; flex-direction:column; gap:10px}
+.example{margin-top:14px; border-radius:14px; overflow:hidden; border:1px solid var(--code-bg)}
+.example pre{background:var(--code-bg); color:var(--code-ink); padding:14px 16px; font-size:.9rem; line-height:1.6; overflow-x:auto; white-space:pre}
+.example-bar{display:flex; align-items:center; background:var(--code-bg); border-top:1px solid rgba(232,242,236,.14); padding:8px 10px}
+.btn-run-mini{background:rgba(232,242,236,.12); color:var(--code-ink); font-weight:700; font-size:.8rem; padding:6px 14px; border-radius:8px}
+.btn-run-mini:hover{background:rgba(232,242,236,.22)}
+.example-out{font-family:"JetBrains Mono",monospace; font-size:.85rem; color:var(--gold); padding:4px 12px 10px; background:var(--code-bg); white-space:pre-wrap; display:none}
+
+.quiz-opts{display:flex; flex-direction:column; gap:10px; margin-top:16px}
+.opt{text-align:left; background:var(--card); border:2px solid var(--mist); border-radius:14px; padding:13px 16px; font-weight:600; font-size:.97rem; transition:border-color .15s, background .15s}
+.opt:hover{border-color:var(--pine)}
+.opt.correct{border-color:var(--pine); background:var(--pine-soft)}
+.opt.wrong{border-color:var(--chili); background:var(--chili-soft); animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.quiz-why{margin-top:14px; padding:12px 14px; border-radius:12px; background:var(--pine-soft); color:var(--pine-deep); font-size:.92rem; display:none}
+
+.task{margin-top:10px; padding:12px 14px; border-radius:12px; background:var(--gold-soft); border:1px solid #F0DCA8; font-size:.95rem}
+textarea.editor{width:100%; min-height:160px; margin-top:14px; resize:vertical; background:var(--code-bg); color:var(--code-ink); border:none; border-radius:14px; padding:14px 16px; font-size:16px; line-height:1.65; tab-size:4; -webkit-text-size-adjust:100%}
+textarea.editor::placeholder{color:#7E948A}
+.run-row{display:flex; gap:10px; margin-top:12px; align-items:center; flex-wrap:wrap}
+.btn{border-radius:13px; font-weight:800; padding:12px 22px; font-size:.95rem; transition:transform .08s ease, background .15s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--pine); color:#fff}
+.btn-primary:hover{background:var(--pine-deep)}
+.btn-primary:disabled{background:#A9BDB3; cursor:wait}
+.btn-gold{background:var(--gold); color:var(--ink)}
+.btn-gold:hover{background:#E0A50F}
+.btn-hint{background:none; color:var(--ink-soft); font-weight:700; font-size:.88rem; padding:10px 12px; border-radius:10px}
+.btn-hint:hover{background:var(--mist)}
+.console{margin-top:12px; background:var(--code-bg); color:var(--code-ink); border-radius:14px; padding:13px 16px; font-size:.86rem; line-height:1.6; white-space:pre-wrap; word-break:break-word; display:none}
+.console .lbl{color:#8FB3A2; font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; display:block; margin-bottom:5px}
+.verdict{margin-top:12px; border-radius:13px; padding:13px 15px; font-size:.93rem; display:none; line-height:1.5}
+.verdict.pass{background:var(--pine-soft); color:var(--pine-deep); border:1.5px solid var(--pine)}
+.verdict.fail{background:var(--chili-soft); color:#8E2D1B; border:1.5px solid #E8A294}
+.verdict .big{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; display:block; margin-bottom:3px}
+.hint-box{margin-top:12px; padding:12px 14px; border-radius:12px; background:var(--mist); font-size:.9rem; display:none}
+
+/* bottom nav */
+.bottom-nav{position:fixed; left:0; right:0; bottom:0; z-index:50; background:rgba(251,246,236,.95); backdrop-filter:blur(8px); border-top:1px solid var(--mist); padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+.bottom-inner{max-width:680px; margin:0 auto; display:flex; gap:10px}
+.btn-continue{flex:1; background:var(--pine); color:#fff; opacity:.45; pointer-events:none}
+.btn-continue.armed{opacity:1; pointer-events:auto}
+.btn-back2{background:var(--card); border:1.5px solid var(--mist); color:var(--ink-soft); font-weight:800; border-radius:13px; padding:12px 16px}
+
+/* toast / coins / level-up */
+.toast{position:fixed; left:50%; transform:translateX(-50%) translateY(20px); bottom:90px; z-index:60; background:var(--ink); color:var(--paper); font-weight:700; font-size:.9rem; padding:11px 20px; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+.coin{position:fixed; z-index:70; width:16px; height:16px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #FFE082, var(--gold) 60%, var(--gold-deep)); box-shadow:0 0 0 1.5px rgba(201,143,6,.6) inset; pointer-events:none}
+.overlay{position:fixed; inset:0; z-index:80; display:none; place-items:center; background:rgba(30,43,34,.45); backdrop-filter:blur(3px); padding:20px}
+.overlay .panel{background:var(--card); border-radius:22px; padding:30px 26px; text-align:center; max-width:360px; width:100%; box-shadow:var(--shadow); animation:stepIn .35s}
+.overlay .badge{font-size:3rem}
+.overlay h3{font-size:1.35rem; margin-top:8px}
+.overlay p{color:var(--ink-soft); margin-top:6px; font-size:.95rem}
+.overlay button{margin-top:18px}
+.overlay input{width:100%; margin-top:16px; padding:12px 14px; border:2px solid var(--mist); border-radius:12px; font:inherit; font-size:16px}
+
+/* certificate */
+#certView{display:none}
+.cert{
+  margin-top:20px; background:var(--card); border:3px solid var(--pine); border-radius:8px;
+  padding:38px 28px; text-align:center; position:relative; box-shadow:var(--shadow);
+}
+.cert::after{content:""; position:absolute; inset:8px; border:1.5px solid var(--gold); border-radius:4px; pointer-events:none}
+.cert .crest{font-size:2.4rem}
+.cert .small{font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; color:var(--gold-deep); font-weight:700; margin-top:10px}
+.cert h2{font-size:1.7rem; margin-top:6px}
+.cert .name{font-family:"Bricolage Grotesque",sans-serif; font-size:1.9rem; font-weight:800; color:var(--pine-deep); margin-top:18px}
+.cert .line{width:220px; height:1.5px; background:var(--ink); margin:6px auto 0; opacity:.5}
+.cert .body{margin-top:16px; color:var(--ink-soft); font-size:.95rem; max-width:42ch; margin-left:auto; margin-right:auto}
+.cert .date{margin-top:18px; font-size:.85rem; color:var(--ink-soft)}
+@media print{
+  body *{visibility:hidden}
+  #certView, #certView *{visibility:visible}
+  #certView{position:absolute; left:0; top:0; width:100%}
+  .no-print{display:none!important}
+}
+
+.foot{margin-top:34px; text-align:center; font-size:.8rem; color:var(--ink-soft)}
+.foot button{background:none; color:var(--ink-soft); text-decoration:underline; font-size:.8rem}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="topbar-inner">
+  <div class="logo"><span>🐍</span> PyQuest</div>
+  <div class="chips">
+    <div class="chip" id="lvlChip">🐣 <span class="v" id="lvlName">Hatchling</span></div>
+    <div class="chip xp" id="xpChip">⭐ <span class="v" id="xpVal">0</span> XP</div>
+    <div class="chip" id="streakChip">🔥 <span class="v" id="streakVal">0</span></div>
+  </div>
+</div></div>
+
+<div class="wrap">
+  <div class="engine"><span class="dot loading" id="engDot"></span><span id="engText">Warming up the Python engine (~10 MB, first visit only)…</span></div>
+
+  <!-- ================= HOME ================= -->
+  <div id="viewHome">
+    <div class="hero">
+      <h1>Learn Python <em>by doing</em>.</h1>
+      <p>Tiny lessons, real code, instant feedback. 6 modules, 28 lessons, free forever — no account, no paywall, runs entirely on your device.</p>
+      <div class="tabs">
+        <button class="tab on" id="tabLearn" onclick="showTab('learn')">Lessons</button>
+        <button class="tab" id="tabPlay" onclick="showTab('play')">Playground</button>
+      </div>
+    </div>
+
+    <div id="paneLearn">
+      <div id="certBannerHost"></div>
+      <div id="moduleHost"></div>
+    </div>
+
+    <div id="panePlay" class="hidden">
+      <div class="card" style="margin-top:18px">
+        <h3>Playground</h3>
+        <p style="color:var(--ink-soft); font-size:.92rem; margin-top:6px">A blank page. Try anything you've learned. (<code>input()</code> returns empty text here — it comes alive inside lessons.)</p>
+        <textarea class="editor" id="playEditor" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder='print("hello from the playground")'></textarea>
+        <div class="run-row"><button class="btn btn-primary" id="playRun" onclick="runPlayground()">Run ▸</button></div>
+        <div class="console" id="playOut"></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      PyQuest v2 · open source · Python runs in your browser via Pyodide<br>
+      <button id="resetBtn" onclick="resetProgress(this)">Reset all progress</button>
+    </div>
+  </div>
+
+  <!-- ================= LESSON ================= -->
+  <div id="viewLesson" class="hidden">
+    <div class="lesson-top">
+      <button class="btn-ghost" onclick="goHome()">← All lessons</button>
+      <div class="step-dots" id="stepDots"></div>
+    </div>
+    <div id="stepHost"></div>
+  </div>
+
+  <!-- ================= CERTIFICATE ================= -->
+  <div id="certView">
+    <button class="btn-ghost no-print" onclick="hideCert()" style="margin-top:18px">← Back</button>
+    <div class="cert">
+      <div class="crest">🐍</div>
+      <div class="small">PyQuest · Certificate of Completion</div>
+      <h2>This certifies that</h2>
+      <div class="name" id="certName">—</div>
+      <div class="line"></div>
+      <div class="body">completed all 6 modules of PyQuest — 28 hands-on lessons covering Python fundamentals: output, variables, f-strings, conditionals, loops, lists, and functions — by writing and passing every line of code themselves.</div>
+      <div class="date" id="certDate"></div>
+    </div>
+    <div class="run-row no-print" style="justify-content:center; margin-top:16px">
+      <button class="btn btn-gold" onclick="window.print()">Print / save as PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-nav hidden" id="bottomNav"><div class="bottom-inner">
+  <button class="btn-back2" id="btnPrev" onclick="prevStep()">Back</button>
+  <button class="btn btn-continue" id="btnNext" onclick="nextStep()">Continue</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="levelup"><div class="panel">
+  <div class="badge" id="luBadge">🧭</div>
+  <h3 id="luTitle">Level up!</h3>
+  <p id="luText"></p>
+  <button class="btn btn-primary" onclick="document.getElementById('levelup').style.display='none'">Keep going</button>
+</div></div>
+
+<div class="overlay" id="claimCert"><div class="panel">
+  <div class="badge">🏆</div>
+  <h3>Course complete</h3>
+  <p>Every module beaten, every line yours. Put a name on it:</p>
+  <input id="claimName" maxlength="40" placeholder="Your full name">
+  <button class="btn btn-gold" onclick="claimCertificate()">Claim certificate</button>
+</div></div>
+
+<script>
+/* =====================================================================
+   CURRICULUM
+   This block is the entire course. To add or edit lessons, edit here —
+   no other code needs to change. Step types: learn | quiz | code.
+   See README.md for the full authoring guide.
+   ===================================================================== */
+const MODULES = [
+
+/* ---------------- MODULE 1 ---------------- */
+{ id:"m1", num:1, title:"Python foundations",
+  lessons:[
+  { id:"m1l1", title:"Say hello", sub:"print() — your first command", xp:25,
+    steps:[
+      { type:"learn", title:"Computers are obedient, not smart",
+        body:["Python does <em>exactly</em> what you tell it — nothing more. Your first command: <code>print()</code> puts text on the screen.",
+              "Text always goes inside quotes. Press <strong>Run</strong> below and watch it obey."],
+        example:'print("Hello, world!")\nprint("I am giving orders to a computer.")' },
+      { type:"quiz", title:"Quick check",
+        q:'What appears on screen when you run <code>print("42")</code>?',
+        opts:["42","\"42\" (with the quotes)","Nothing","An error"], answer:0,
+        why:"Quotes tell Python where text starts and ends — they never get printed themselves." },
+      { type:"code", title:"Your turn",
+        task:'Make the screen say exactly: <strong>Hello, Python!</strong>',
+        starter:'# Write one line of code below:\n',
+        checks:[{kind:"output", mode:"exact", value:"Hello, Python!", msg:"The output should be exactly: Hello, Python!"}],
+        hint:'print("Hello, Python!") — capital H, capital P, and the exclamation mark all matter.' }
+    ]},
+  { id:"m1l2", title:"Remember things", sub:"variables — labeled boxes", xp:25,
+    steps:[
+      { type:"learn", title:"Variables are labeled boxes",
+        body:["A variable stores a value under a name so you can reuse it: <code>city = \"Mumbai\"</code>.",
+              "Read <code>=</code> as \u201cgets\u201d, not \u201cequals\u201d. Name on the left, value on the right."],
+        example:'city = "Mumbai"\nprint(city)\nprint(city)' },
+      { type:"quiz", title:"Quick check",
+        q:'After running <code>x = 5</code> and then <code>x = 7</code>, what does <code>print(x)</code> show?',
+        opts:["5","7","57","An error"], answer:1,
+        why:"A variable holds one value at a time. The second assignment replaces the first." },
+      { type:"code", title:"Your turn",
+        task:'Create a variable called <strong>food</strong> holding your favourite food, then print <strong>I love</strong> followed by it. (Example output: <em>I love vada pav</em>)',
+        starter:'food = \nprint("I love", food)\n',
+        checks:[
+          {kind:"code", contains:"food", msg:"Use a variable named food."},
+          {kind:"output", mode:"contains", value:"I love", msg:"The output should start with: I love"}],
+        hint:'food = "vada pav" — the value needs quotes because it is text. print() with a comma adds the space for you.' }
+    ]},
+  { id:"m1l3", title:"String glue", sub:"f-strings — drop variables into text", xp:25,
+    steps:[
+      { type:"learn", title:"f-strings: fill in the blanks",
+        body:["Put an <code>f</code> before the quotes and Python fills anything inside <code>{ }</code> with a variable's value.",
+              "This is the #1 most-used trick in everyday Python."],
+        example:'name = "Asha"\nprint(f"Hi {name}, welcome back!")' },
+      { type:"quiz", title:"Quick check",
+        q:'Which line prints <strong>Hi Asha</strong>?',
+        opts:['print("Hi {name}")','print(f"Hi {name}")','print(f Hi name)'], answer:1,
+        why:"Without the f, Python prints the braces literally: Hi {name}. The f switches on fill-in-the-blanks." },
+      { type:"code", title:"Your turn",
+        task:'The variables are ready. Use <strong>one f-string</strong> to print exactly: <strong>Ada is 36 years old</strong>',
+        starter:'name = "Ada"\nage = 36\n# your f-string print below:\n',
+        checks:[
+          {kind:"code", containsAny:['f"',"f'"], msg:"Use an f-string — an f right before the opening quote."},
+          {kind:"output", mode:"exact", value:"Ada is 36 years old", msg:"Expected exactly: Ada is 36 years old"}],
+        hint:'print(f"{name} is {age} years old")' }
+    ]},
+  { id:"m1l4", title:"Number crunching", sub:"math without quotes", xp:25,
+    steps:[
+      { type:"learn", title:"Numbers don't wear quotes",
+        body:["<code>15</code> is a number you can do math with. <code>\"15\"</code> is just text that looks like one.",
+              "Operators: <code>+</code> <code>-</code> <code>*</code> (multiply) <code>/</code> (divide) <code>**</code> (power)."],
+        example:'print(7 * 6)\nprint(2 ** 10)\nprint("2" + "3")   # text glues, it does not add!' },
+      { type:"quiz", title:"Quick check",
+        q:'What does <code>print("2" + "3")</code> show?',
+        opts:["5","23","2 + 3","An error"], answer:1,
+        why:"With quotes they're text, and + glues text together. Drop the quotes to get real addition." },
+      { type:"code", title:"Your turn",
+        task:'A samosa costs ₹15. You\'re buying for the whole team — 12 of them. Use <strong>*</strong> to print the total cost as a plain number.',
+        starter:'price = 15\nqty = 12\n',
+        checks:[
+          {kind:"code", contains:"*", msg:"Make Python do the multiplying — use *."},
+          {kind:"output", mode:"exact", value:"180", msg:"Expected exactly: 180"}],
+        hint:'print(price * qty)' }
+    ]},
+  { id:"m1l5", title:"Ask the user", sub:"input() — programs that listen", xp:25,
+    steps:[
+      { type:"learn", title:"input() pauses and listens",
+        body:["<code>input(\"Name? \")</code> shows a question, waits for typing, and hands back whatever was typed.",
+              "In these lessons a <strong>test user</strong> auto-types the answers so your code can be checked. Watch:"],
+        example:'name = input("What is your name? ")\nprint(f"Nice to meet you, {name}!")',
+        exampleInputs:["Priya"] },
+      { type:"quiz", title:"Quick check",
+        q:'A user types <strong>25</strong> into <code>input()</code>. What does Python hand back?',
+        opts:["The number 25","The text \"25\"","Nothing"], answer:1,
+        why:"input() always returns text — even when it looks like a number. Converting it comes in Module 2." },
+      { type:"code", title:"Your turn",
+        task:'Ask for the user\'s name with <code>input()</code>, then greet them: <strong>Welcome, NAME!</strong> — the test user will type <em>Rohan</em>.',
+        starter:'name = input("Your name? ")\n',
+        inputs:["Rohan"],
+        checks:[
+          {kind:"code", contains:"input", msg:"Use input() to ask."},
+          {kind:"output", mode:"contains", value:"Welcome, Rohan!", msg:"Expected the output to include: Welcome, Rohan!"}],
+        hint:'print(f"Welcome, {name}!")' }
+    ]},
+  { id:"m1l6", title:"Mini-boss: chai shop greeter", sub:"everything so far, combined", xp:40, boss:true,
+    steps:[
+      { type:"learn", title:"⚔️ Boss rules",
+        body:["No new concepts — just you combining <code>input()</code>, variables, and an f-string.",
+              "You're writing the greeter for a chai shop's ordering kiosk. Worth <strong>40 XP</strong>."] },
+      { type:"code", title:"The boss fight",
+        task:'1) Ask the customer\'s <strong>name</strong>. 2) Ask their <strong>drink</strong>. 3) Print: <strong>Hi NAME, one DRINK coming up!</strong><br>The test customer answers <em>Zara</em>, then <em>masala chai</em>.',
+        starter:'# Step 1: ask the name\n# Step 2: ask the drink\n# Step 3: greet with an f-string\n',
+        inputs:["Zara","masala chai"],
+        checks:[
+          {kind:"code", contains:"input", msg:"Use input() — twice."},
+          {kind:"code", containsAny:['f"',"f'"], msg:"Use an f-string for the greeting."},
+          {kind:"output", mode:"contains", value:"Hi Zara, one masala chai coming up!", msg:"Expected: Hi Zara, one masala chai coming up!"}],
+        hint:'name = input("Name? ")  then  drink = input("Drink? ")  then  print(f"Hi {name}, one {drink} coming up!")' }
+    ]}
+]},
+
+/* ---------------- MODULE 2 ---------------- */
+{ id:"m2", num:2, title:"Decisions — if / else",
+  lessons:[
+  { id:"m2l1", title:"True or False", sub:"comparisons — Python's yes/no", xp:25,
+    steps:[
+      { type:"learn", title:"Every comparison has an answer",
+        body:["Ask Python a comparison and it answers <code>True</code> or <code>False</code>. These answers are called <em>booleans</em>.",
+              "The operators: <code>&gt;</code> <code>&lt;</code> <code>&gt;=</code> <code>&lt;=</code> <code>==</code> (equal) <code>!=</code> (not equal). Note: <strong>two</strong> equals signs to compare — one <code>=</code> means \u201cgets\u201d."],
+        example:'print(5 > 3)\nprint(10 == 9)\nprint("chai" != "coffee")' },
+      { type:"quiz", title:"Quick check",
+        q:'What does <code>print(3 == 3)</code> show?',
+        opts:["True","False","3","An error"], answer:0,
+        why:"== asks \u201care these equal?\u201d — and 3 equals 3, so Python answers True." },
+      { type:"code", title:"Your turn",
+        task:'Use <code>==</code> to ask Python whether <strong>7 * 8</strong> equals <strong>56</strong>, and print the answer.',
+        starter:'',
+        checks:[
+          {kind:"code", contains:"==", msg:"Use == to compare."},
+          {kind:"output", mode:"exact", value:"True", msg:"Expected exactly: True"}],
+        hint:'print(7 * 8 == 56)' }
+    ]},
+  { id:"m2l2", title:"The if statement", sub:"code that only sometimes runs", xp:25,
+    steps:[
+      { type:"learn", title:"if: run this only when True",
+        body:["<code>if</code> checks a condition. When it's True, the <strong>indented</strong> lines below run. When False, Python skips them.",
+              "Two sacred rules: a <code>:</code> at the end of the if line, and <strong>4 spaces</strong> of indent for what belongs to it. Python is genuinely strict about this."],
+        example:'age = 18\nif age >= 18:\n    print("Adult ticket")\nprint("This line always runs")' },
+      { type:"quiz", title:"Quick check",
+        q:'How does Python know which lines belong to the <code>if</code>?',
+        opts:["They're indented underneath it","They're on the same line","They start with if too"], answer:0,
+        why:"Indentation IS the grouping in Python. Lines indented under the if run only when it's True." },
+      { type:"code", title:"Your turn",
+        task:'A patient\'s temperature is stored in <code>temp</code>. If it\'s above 37, print exactly: <strong>Fever</strong>',
+        starter:'temp = 38\n',
+        checks:[
+          {kind:"code", contains:"if", msg:"Use an if statement."},
+          {kind:"output", mode:"exact", value:"Fever", msg:"Expected exactly: Fever"}],
+        hint:'if temp > 37:\n    print("Fever")   ← note the colon and the 4 spaces' }
+    ]},
+  { id:"m2l3", title:"Otherwise: else", sub:"a plan B for False", xp:25,
+    steps:[
+      { type:"learn", title:"else: when the if says no",
+        body:["<code>else</code> catches every case the <code>if</code> didn't. One of the two branches always runs — never both.",
+              "Same rules: colon, then indented lines."],
+        example:'balance = 120\nprice = 200\nif balance >= price:\n    print("Purchase successful")\nelse:\n    print("Not enough balance")' },
+      { type:"quiz", title:"Quick check",
+        q:'When does the <code>else</code> branch run?',
+        opts:["Always","When the if condition is False","When the if condition is True"], answer:1,
+        why:"else is the fallback — it runs exactly when the if condition turned out False." },
+      { type:"code", title:"Your turn",
+        task:'Pass mark is 40. If <code>marks</code> is at least 40, print <strong>Pass</strong>, otherwise print <strong>Try again</strong>.',
+        starter:'marks = 35\n',
+        checks:[
+          {kind:"code", contains:"else", msg:"Use if AND else."},
+          {kind:"output", mode:"exact", value:"Try again", msg:"marks is 35, so expected exactly: Try again"}],
+        hint:'if marks >= 40:\n    print("Pass")\nelse:\n    print("Try again")' }
+    ]},
+  { id:"m2l4", title:"Many branches: elif", sub:"more than two outcomes", xp:25,
+    steps:[
+      { type:"learn", title:"elif: else-if, checked in order",
+        body:["When there are several possibilities, chain them: <code>if → elif → elif → else</code>. Python checks top to bottom and runs the <strong>first</strong> True branch only.",
+              "Order matters — put the strictest condition first."],
+        example:'signal = "amber"\nif signal == "red":\n    print("Stop")\nelif signal == "amber":\n    print("Slow down")\nelse:\n    print("Go")' },
+      { type:"quiz", title:"Quick check",
+        q:'In an if / elif / else chain, how many branches run?',
+        opts:["All the True ones","Exactly one","At least two"], answer:1,
+        why:"Python takes the first True branch and skips the rest — exactly one branch runs." },
+      { type:"code", title:"Your turn",
+        task:'Grades: 90+ is <strong>A</strong>, 70+ is <strong>B</strong>, everything else <strong>C</strong>. Print the grade for <code>score</code>. (It\'s 75, so the answer is B.)',
+        starter:'score = 75\n',
+        checks:[
+          {kind:"code", contains:"elif", msg:"Use an elif for the middle case."},
+          {kind:"output", mode:"exact", value:"B", msg:"score is 75 → expected exactly: B"}],
+        hint:'if score >= 90: → "A", elif score >= 70: → "B", else: → "C"' }
+    ]},
+  { id:"m2l5", title:"Text to number", sub:"int() — because input() gives text", xp:25,
+    steps:[
+      { type:"learn", title:"int() converts text to a real number",
+        body:["Remember: <code>input()</code> always hands back <em>text</em>. <code>\"16\" &gt;= 18</code> would crash — you can't compare text to a number.",
+              "Wrap it: <code>age = int(input(\"Age? \"))</code> turns the typed text into a number you can do math and comparisons with."],
+        example:'age = int(input("How old are you? "))\nprint(age + 1)',
+        exampleInputs:["29"] },
+      { type:"quiz", title:"Quick check",
+        q:'Why wrap input() in int()?',
+        opts:["To make it run faster","Because input() returns text, and math needs numbers","To hide the question"], answer:1,
+        why:"int() converts the text \"29\" into the number 29. Without it, comparisons and math break." },
+      { type:"code", title:"Your turn",
+        task:'Ask for an age (the test user types <em>16</em>). If 18 or older print <strong>Can vote</strong>, otherwise <strong>Not yet</strong>.',
+        starter:'age = int(input("Age? "))\n',
+        inputs:["16"],
+        checks:[
+          {kind:"code", contains:"int(", msg:"Convert the input with int()."},
+          {kind:"output", mode:"contains", value:"Not yet", msg:"The test user is 16 → expected: Not yet"}],
+        hint:'if age >= 18:\n    print("Can vote")\nelse:\n    print("Not yet")' }
+    ]},
+  { id:"m2l6", title:"Boss: train ticket machine", sub:"branching like Mumbai local fares", xp:40, boss:true,
+    steps:[
+      { type:"learn", title:"⚔️ Boss rules",
+        body:["Build the fare logic for a ticket machine: under 5 rides <strong>free</strong>, 60 and above gets the <strong>senior discount</strong>, everyone else pays <strong>full fare</strong>.",
+              "You'll need input(), int(), and an if / elif / else chain. 40 XP."] },
+      { type:"code", title:"The boss fight",
+        task:'Ask for the passenger\'s age (test passenger types <em>65</em>). Print exactly one line:<br>under 5 → <strong>Free ticket</strong> · 60 or above → <strong>Senior discount</strong> · otherwise → <strong>Full fare</strong>',
+        starter:'age = int(input("Passenger age? "))\n',
+        inputs:["65"],
+        checks:[
+          {kind:"code", contains:"elif", msg:"Three outcomes need an if / elif / else chain."},
+          {kind:"output", mode:"contains", value:"Senior discount", msg:"Age 65 → expected: Senior discount"}],
+        hint:'if age < 5: → Free ticket\nelif age >= 60: → Senior discount\nelse: → Full fare' }
+    ]}
+]},
+
+/* ---------------- MODULE 3 ---------------- */
+{ id:"m3", num:3, title:"Loops — repeat without repeating yourself",
+  lessons:[
+  { id:"m3l1", title:"while: repeat until done", sub:"loops with a condition", xp:25,
+    steps:[
+      { type:"learn", title:"while: keep going as long as it's True",
+        body:["A <code>while</code> loop re-runs its indented block as long as the condition stays True. Something inside the loop must <em>change</em>, or it never ends.",
+              "Here <code>n = n - 1</code> is the change that eventually makes <code>n &gt; 0</code> False."],
+        example:'n = 3\nwhile n > 0:\n    print(n)\n    n = n - 1\nprint("Go!")' },
+      { type:"quiz", title:"Quick check",
+        q:'What stops a while loop?',
+        opts:["It runs exactly 10 times","Its condition becoming False","The print statement"], answer:1,
+        why:"The loop checks the condition before every lap. The moment it's False, Python moves on. (PyQuest will rescue you if you accidentally make one that never stops.)" },
+      { type:"code", title:"Your turn",
+        task:'Use a <code>while</code> loop to print the numbers <strong>1 to 5</strong>, one per line.',
+        starter:'n = 1\n',
+        checks:[
+          {kind:"code", contains:"while", msg:"Use a while loop."},
+          {kind:"output", mode:"exact", value:"1\n2\n3\n4\n5", msg:"Expected 1 to 5, one per line."}],
+        hint:'while n <= 5:\n    print(n)\n    n = n + 1' }
+    ]},
+  { id:"m3l2", title:"for + range: counted repeats", sub:"the everyday loop", xp:25,
+    steps:[
+      { type:"learn", title:"for: repeat an exact number of times",
+        body:["<code>for i in range(3):</code> runs the block 3 times, with <code>i</code> counting <code>0, 1, 2</code>. Yes — Python counts from <strong>0</strong>.",
+              "<code>range(1, 6)</code> counts 1 to 5: the end number is never included."],
+        example:'for i in range(3):\n    print("hi number", i)\nfor i in range(1, 4):\n    print(i)' },
+      { type:"quiz", title:"Quick check",
+        q:'What numbers does <code>range(3)</code> produce?',
+        opts:["1, 2, 3","0, 1, 2","0, 1, 2, 3"], answer:1,
+        why:"range starts at 0 and stops before the end number — so range(3) is 0, 1, 2." },
+      { type:"code", title:"Your turn",
+        task:'Print <strong>Python</strong> exactly <strong>4 times</strong> using a for loop.',
+        starter:'',
+        checks:[
+          {kind:"code", contains:"for", msg:"Use a for loop."},
+          {kind:"code", contains:"range", msg:"Use range() to count."},
+          {kind:"output", mode:"exact", value:"Python\nPython\nPython\nPython", msg:"Expected the word Python on 4 lines."}],
+        hint:'for i in range(4):\n    print("Python")' }
+    ]},
+  { id:"m3l3", title:"The running total", sub:"accumulators — loops that build up", xp:25,
+    steps:[
+      { type:"learn", title:"Start at zero, add as you go",
+        body:["The most useful loop pattern in existence: create <code>total = 0</code> before the loop, then add to it on every lap.",
+              "By the end, <code>total</code> holds the sum of everything."],
+        example:'total = 0\nfor i in range(1, 6):\n    total = total + i\nprint(total)   # 1+2+3+4+5' },
+      { type:"quiz", title:"Quick check",
+        q:'Why create <code>total = 0</code> <em>before</em> the loop?',
+        opts:["Python requires every program to start with 0","The loop needs an existing value to add onto","To make the loop run faster"], answer:1,
+        why:"total = total + i needs a total to exist on the first lap. Zero is the neutral starting point for addition." },
+      { type:"code", title:"Your turn",
+        task:'Use a loop and a running total to print the sum of <strong>1 to 10</strong>. (Spoiler: it\'s 55 — make Python earn it.)',
+        starter:'total = 0\n',
+        checks:[
+          {kind:"code", containsAny:["for","while"], msg:"Use a loop — no calculators."},
+          {kind:"output", mode:"exact", value:"55", msg:"Expected exactly: 55"}],
+        hint:'for i in range(1, 11):\n    total = total + i\nprint(total)' }
+    ]},
+  { id:"m3l4", title:"Emergency exit: break", sub:"stopping a loop early", xp:25,
+    steps:[
+      { type:"learn", title:"break: leave immediately",
+        body:["<code>break</code> exits the loop on the spot — the rest of the laps are cancelled.",
+              "Classic use: searching for something, stopping the moment you find it."],
+        example:'for n in range(1, 10):\n    if n == 4:\n        break\n    print(n)\nprint("Stopped early")' },
+      { type:"quiz", title:"Quick check",
+        q:'What does <code>break</code> do?',
+        opts:["Pauses the loop for a second","Exits the loop immediately","Restarts the loop from 0"], answer:1,
+        why:"break abandons the loop instantly and jumps to the first line after it." },
+      { type:"code", title:"Your turn",
+        task:'Loop upward from 1, printing each number — but use <code>break</code> to stop <strong>before printing 4</strong>. Output should be 1, 2, 3.',
+        starter:'for n in range(1, 10):\n',
+        checks:[
+          {kind:"code", contains:"break", msg:"Use break to bail out."},
+          {kind:"output", mode:"exact", value:"1\n2\n3", msg:"Expected exactly: 1, 2, 3 — one per line."}],
+        hint:'    if n == 4:\n        break\n    print(n)' }
+    ]},
+  { id:"m3l5", title:"Boss: chai-coffee", sub:"the classic interview question, desi edition", xp:40, boss:true,
+    steps:[
+      { type:"learn", title:"⚔️ Boss rules",
+        body:["This is FizzBuzz — a famous test that real interviewers have used for decades. You already know everything it needs.",
+              "For numbers 1 to 15: multiples of 3 print <code>chai</code>, multiples of 5 print <code>coffee</code>, multiples of <em>both</em> print <code>chai coffee</code>, everything else prints the number. Check both-at-once <strong>first</strong>. 40 XP."] },
+      { type:"code", title:"The boss fight",
+        task:'Loop 1 to 15. Multiple of 3 and 5 → <strong>chai coffee</strong> · of 3 → <strong>chai</strong> · of 5 → <strong>coffee</strong> · else the number.<br>Tip: <code>n % 3 == 0</code> means \u201cn divides evenly by 3\u201d — <code>%</code> gives the remainder.',
+        starter:'for n in range(1, 16):\n',
+        checks:[
+          {kind:"code", contains:"%", msg:"Use % (remainder) to test divisibility."},
+          {kind:"output", mode:"exact", value:"1\n2\nchai\n4\ncoffee\nchai\n7\n8\nchai\ncoffee\n11\nchai\n13\n14\nchai coffee", msg:"Not quite the expected 15 lines. Check the order of your conditions — both-at-once must be tested first."}],
+        hint:'    if n % 3 == 0 and n % 5 == 0:\n        print("chai coffee")\n    elif n % 3 == 0:\n        print("chai")\n    elif n % 5 == 0:\n        print("coffee")\n    else:\n        print(n)' }
+    ]}
+]},
+
+/* ---------------- MODULE 4 ---------------- */
+{ id:"m4", num:4, title:"Lists — many things in one box",
+  lessons:[
+  { id:"m4l1", title:"Making lists", sub:"square brackets + len()", xp:25,
+    steps:[
+      { type:"learn", title:"A list holds many values in order",
+        body:["Square brackets, items separated by commas: <code>snacks = [\"samosa\", \"vada pav\", \"bhel\"]</code>.",
+              "<code>len(snacks)</code> tells you how many items are inside."],
+        example:'snacks = ["samosa", "vada pav", "bhel"]\nprint(snacks)\nprint(len(snacks))' },
+      { type:"quiz", title:"Quick check",
+        q:'What does <code>len()</code> give you?',
+        opts:["The longest item","The number of items","The last item"], answer:1,
+        why:"len = length. For a list, that's how many items it contains." },
+      { type:"code", title:"Your turn",
+        task:'Make a list called <strong>cities</strong> with any <strong>3 city names</strong>, then print how many it holds.',
+        starter:'cities = \n',
+        checks:[
+          {kind:"code", contains:"len(", msg:"Use len() to count."},
+          {kind:"output", mode:"exact", value:"3", msg:"Three cities → expected exactly: 3"}],
+        hint:'cities = ["Mumbai", "Pune", "Delhi"]\nprint(len(cities))' }
+    ]},
+  { id:"m4l2", title:"Grabbing one item", sub:"indexing — position numbers", xp:25,
+    steps:[
+      { type:"learn", title:"Every item has a position number",
+        body:["Grab one item with its index: <code>colors[0]</code> is the <strong>first</strong> item — positions start at 0, like range().",
+              "Negative indexes count from the end: <code>colors[-1]</code> is always the last item."],
+        example:'colors = ["red", "green", "blue"]\nprint(colors[0])\nprint(colors[-1])' },
+      { type:"quiz", title:"Quick check",
+        q:'For <code>items = ["a", "b", "c"]</code>, what is <code>items[1]</code>?',
+        opts:["a","b","c"], answer:1,
+        why:"Index 0 is \"a\", so index 1 is \"b\". Off-by-one trips up every programmer alive — you're in good company." },
+      { type:"code", title:"Your turn",
+        task:'Print the <strong>last</strong> item of the list — using its index, not by typing the word.',
+        starter:'queue = ["Asha", "Dev", "Meera", "Zara"]\n',
+        checks:[
+          {kind:"code", containsAny:["[-1]","[3]"], msg:"Use an index — [-1] is the elegant way."},
+          {kind:"output", mode:"exact", value:"Zara", msg:"Expected exactly: Zara"}],
+        hint:'print(queue[-1])' }
+    ]},
+  { id:"m4l3", title:"Growing a list", sub:"append() — add to the end", xp:25,
+    steps:[
+      { type:"learn", title:"append: stick it on the end",
+        body:["Lists are alive — <code>orders.append(\"chai\")</code> adds an item to the end of the list.",
+              "The dot means \u201cdo this <em>to</em> the list\u201d. You'll meet many dot-commands; append is the busiest."],
+        example:'orders = ["samosa"]\norders.append("chai")\norders.append("lassi")\nprint(orders)' },
+      { type:"quiz", title:"Quick check",
+        q:'Where does <code>append()</code> put the new item?',
+        opts:["At the start","Wherever it fits alphabetically","At the end"], answer:2,
+        why:"Always the end. (Inserting elsewhere is possible too — but append covers 95% of real life.)" },
+      { type:"code", title:"Your turn",
+        task:'Start with the order list below, <strong>append</strong> <code>"chai"</code> to it, then print the whole list.',
+        starter:'orders = ["samosa"]\n',
+        checks:[
+          {kind:"code", contains:"append", msg:"Use .append()."},
+          {kind:"output", mode:"exact", value:"['samosa', 'chai']", msg:"Expected the printed list: ['samosa', 'chai']"}],
+        hint:'orders.append("chai")\nprint(orders)' }
+    ]},
+  { id:"m4l4", title:"Looping over a list", sub:"for — once per item", xp:25,
+    steps:[
+      { type:"learn", title:"for visits every item",
+        body:["<code>for snack in snacks:</code> runs the block once per item, with <code>snack</code> holding the current one.",
+              "Lists + loops is where Python starts feeling powerful: do something to <em>everything</em> in three lines."],
+        example:'snacks = ["samosa", "bhel", "dhokla"]\nfor snack in snacks:\n    print(f"One {snack}, please!")' },
+      { type:"quiz", title:"Quick check",
+        q:'How many times does the loop body run for a list of 5 items?',
+        opts:["Once","5 times","Until you press stop"], answer:1,
+        why:"Once per item — the loop variable takes each value in turn, start to end." },
+      { type:"code", title:"Your turn",
+        task:'Greet every friend in the list with <strong>Hi NAME</strong>, one per line, using a loop and an f-string.',
+        starter:'friends = ["Asha", "Dev", "Meera"]\n',
+        checks:[
+          {kind:"code", contains:"for", msg:"Use a for loop over the list."},
+          {kind:"output", mode:"exact", value:"Hi Asha\nHi Dev\nHi Meera", msg:"Expected: Hi Asha / Hi Dev / Hi Meera — one per line."}],
+        hint:'for friend in friends:\n    print(f"Hi {friend}")' }
+    ]},
+  { id:"m4l5", title:"Boss: the bill splitter", sub:"every group dinner, automated", xp:40, boss:true,
+    steps:[
+      { type:"learn", title:"⚔️ Boss rules",
+        body:["The table ordered, the bill arrived, four friends are staring at it. Save them.",
+              "Add up the prices with a loop and a running total (Module 3 skills!), print the total, then print each person's equal share. 40 XP."] },
+      { type:"code", title:"The boss fight",
+        task:'1) Sum the <code>prices</code> with a loop into <code>total</code>. 2) Print the total (it\'s 400). 3) Print the split between <strong>4</strong> friends (100.0).',
+        starter:'prices = [120, 80, 200]\ntotal = 0\n',
+        checks:[
+          {kind:"code", contains:"for", msg:"Sum with a loop — that's the skill being tested."},
+          {kind:"output", mode:"contains", value:"400", msg:"First print the total: 400"},
+          {kind:"output", mode:"contains", value:"100.0", msg:"Then the split: 400 / 4 → 100.0 (division always gives a decimal)."}],
+        hint:'for p in prices:\n    total = total + p\nprint(total)\nprint(total / 4)' }
+    ]}
+]},
+
+/* ---------------- MODULE 5 ---------------- */
+{ id:"m5", num:5, title:"Functions — name your own commands",
+  lessons:[
+  { id:"m5l1", title:"def: teach Python a new trick", sub:"defining and calling", xp:25,
+    steps:[
+      { type:"learn", title:"Define once, use forever",
+        body:["<code>def cheer():</code> teaches Python a new command. The indented lines are what it does. <strong>Defining runs nothing</strong> — the function only fires when you <em>call</em> it: <code>cheer()</code>.",
+              "You've been calling functions all along — print(), input(), len() — now you get to make your own."],
+        example:'def cheer():\n    print("You got this!")\n\ncheer()\ncheer()' },
+      { type:"quiz", title:"Quick check",
+        q:'You run a file containing only a <code>def</code> block, no call. What prints?',
+        opts:["The function's output","Nothing","An error"], answer:1,
+        why:"def only teaches. Nothing happens until the function is called by name with ()." },
+      { type:"code", title:"Your turn",
+        task:'Define a function <strong>cheer</strong> that prints <strong>You got this!</strong> — then call it <strong>twice</strong>.',
+        starter:'def cheer():\n    # what should it do?\n\n',
+        checks:[
+          {kind:"code", contains:"def", msg:"Define the function with def."},
+          {kind:"output", mode:"exact", value:"You got this!\nYou got this!", msg:"Expected the cheer twice — are you calling it two times?"}],
+        hint:'def cheer():\n    print("You got this!")\n\ncheer()\ncheer()' }
+    ]},
+  { id:"m5l2", title:"Parameters", sub:"functions that take input", xp:25,
+    steps:[
+      { type:"learn", title:"Pass values in through the brackets",
+        body:["<code>def greet(name):</code> — that <code>name</code> is a <em>parameter</em>: a variable that gets its value from whoever calls the function.",
+              "<code>greet(\"Zara\")</code> runs the function with name set to \"Zara\". Same recipe, different ingredients."],
+        example:'def greet(name):\n    print(f"Hello, {name}!")\n\ngreet("Zara")\ngreet("Dev")' },
+      { type:"quiz", title:"Quick check",
+        q:'In <code>def greet(name):</code> … <code>greet("Dev")</code> — what is <code>name</code> while the function runs?',
+        opts:['The text "name"','The text "Dev"',"Empty"], answer:1,
+        why:"The call hands \"Dev\" in, and the parameter name carries it inside the function." },
+      { type:"code", title:"Your turn",
+        task:'Fix the function so each call prints <strong>Hello, NAME!</strong> for the name passed in.',
+        starter:'def greet(name):\n    print(f"Hello, ...!")   # fix this line\n\ngreet("Zara")\ngreet("Dev")\n',
+        checks:[
+          {kind:"code", contains:"{name}", msg:"Use {name} inside the f-string."},
+          {kind:"output", mode:"exact", value:"Hello, Zara!\nHello, Dev!", msg:"Expected: Hello, Zara! then Hello, Dev!"}],
+        hint:'print(f"Hello, {name}!")' }
+    ]},
+  { id:"m5l3", title:"return: hand the answer back", sub:"functions that compute", xp:25,
+    steps:[
+      { type:"learn", title:"return gives a value back to the caller",
+        body:["<code>print</code> just shows things. <code>return</code> hands a value <em>back to your code</em>, so you can store it, do more math with it, or print it later.",
+              "A function with return is a little machine: values in, value out."],
+        example:'def double(n):\n    return n * 2\n\nresult = double(5)\nprint(result)\nprint(double(8) + 1)' },
+      { type:"quiz", title:"Quick check",
+        q:'What\'s the key difference between <code>print</code> and <code>return</code>?',
+        opts:["No difference","print shows a value; return hands it back to the code for further use","return is just a faster print"], answer:1,
+        why:"Returned values can be stored and reused — that's what makes functions composable building blocks." },
+      { type:"code", title:"Your turn",
+        task:'Write <strong>total(price, qty)</strong> that <strong>returns</strong> price × qty. Then print <code>total(15, 12)</code>.',
+        starter:'def total(price, qty):\n    # return the product\n\n',
+        checks:[
+          {kind:"code", contains:"return", msg:"The function must return the value — not print it."},
+          {kind:"output", mode:"exact", value:"180", msg:"print(total(15, 12)) → expected exactly: 180"}],
+        hint:'def total(price, qty):\n    return price * qty\n\nprint(total(15, 12))' }
+    ]},
+  { id:"m5l4", title:"Boss: the billing machine", sub:"a reusable function, used twice", xp:40, boss:true,
+    steps:[
+      { type:"learn", title:"⚔️ Boss rules",
+        body:["The chai shop needs a billing function it can reuse for every customer. Chai is ₹15 a cup.",
+              "Write it once, call it twice — that's the whole point of functions. 40 XP."] },
+      { type:"code", title:"The boss fight",
+        task:'Write <strong>bill(name, cups)</strong> that <strong>returns</strong> the text <strong>NAME owes ₹AMOUNT</strong> where amount = cups × 15. Then print <code>bill("Zara", 3)</code> and <code>bill("Dev", 2)</code>.',
+        starter:'def bill(name, cups):\n    # build and return the f-string\n\n',
+        checks:[
+          {kind:"code", contains:"return", msg:"bill() must return the text."},
+          {kind:"output", mode:"contains", value:"Zara owes ₹45", msg:"Expected a line: Zara owes ₹45"},
+          {kind:"output", mode:"contains", value:"Dev owes ₹30", msg:"Expected a line: Dev owes ₹30"}],
+        hint:'def bill(name, cups):\n    return f"{name} owes ₹{cups * 15}"\n\nprint(bill("Zara", 3))\nprint(bill("Dev", 2))' }
+    ]}
+]},
+
+/* ---------------- MODULE 6 ---------------- */
+{ id:"m6", num:6, title:"Capstone — Chai Shop 2.0",
+  lessons:[
+  { id:"m6l1", title:"Final boss: the full program", sub:"input · int · if · math · f-strings", xp:60, boss:true,
+    steps:[
+      { type:"learn", title:"👑 Everything, together",
+        body:["One real program, start to finish: take an order, calculate the bill, apply a loyalty discount, print a receipt. Every module you've beaten shows up here.",
+              "Chai is ₹15 a cup. Orders of <strong>5 cups or more</strong> get 10% off (multiply by 0.9). The test customer is <em>Zara</em>, ordering <em>6</em> cups. Worth <strong>60 XP</strong>."] },
+      { type:"code", title:"Chai Shop 2.0",
+        task:'1) Ask the customer\'s name. 2) Ask how many cups (use int!). 3) Bill = cups × 15; if cups ≥ 5, bill = bill × 0.9. 4) Print a receipt line containing the <strong>name</strong> and one containing the final <strong>amount</strong> (6 cups → 90 → with discount <strong>81.0</strong>).',
+        starter:'# 1) name = ...\n# 2) cups = ...\n# 3) compute the bill (+ discount if 5 or more)\n# 4) print the receipt\n',
+        inputs:["Zara","6"],
+        checks:[
+          {kind:"code", contains:"int(", msg:"Cups must be a number — int(input(...))."},
+          {kind:"code", contains:"if", msg:"The discount needs an if."},
+          {kind:"output", mode:"contains", value:"Zara", msg:"The receipt should mention the customer's name."},
+          {kind:"output", mode:"contains", value:"81.0", msg:"6 cups × ₹15 = 90, minus 10% → 81.0 should appear in the output."}],
+        hint:'name = input("Name? ")\ncups = int(input("Cups? "))\nbill = cups * 15\nif cups >= 5:\n    bill = bill * 0.9\nprint(f"Receipt for {name}")\nprint(f"Total: ₹{bill}")' },
+      { type:"learn", title:"🎓 You're done — now what?",
+        body:["That program — input, conversion, branching, arithmetic, formatted output — is the skeleton of most software you've ever used. You wrote it.",
+              "Three good next moves: <strong>1)</strong> claim your certificate on the home screen, <strong>2)</strong> add your own module to this site (the README shows how — the curriculum is one editable block), <strong>3)</strong> go deeper free at <strong>cs50.harvard.edu/python</strong>. Onward. 🐍"] }
+    ]}
+]}
+];
+
+const LEVELS = [
+  {at:0,   name:"Hatchling",  badge:"🐣"},
+  {at:80,  name:"Explorer",   badge:"🧭"},
+  {at:200, name:"Coder",      badge:"⌨️"},
+  {at:350, name:"Builder",    badge:"🧱"},
+  {at:520, name:"Debugger",   badge:"🔍"},
+  {at:700, name:"Architect",  badge:"🏗️"},
+  {at:860, name:"Pythonista", badge:"🐍"}
+];
+
+/* ============================ STATE ============================ */
+let S = { xp:0, streak:0, lastDay:null, done:{}, quizDone:{}, certName:null, certDate:null };
+const mem = {};
+const store = {
+  async get(k){
+    if (typeof window.storage !== "undefined" && window.storage){
+      try{ const r = await window.storage.get(k); return r ? JSON.parse(r.value) : null; }catch(e){ return null; }
+    }
+    try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }catch(e){ return mem[k] ?? null; }
+  },
+  async set(k,v){
+    const s = JSON.stringify(v);
+    if (typeof window.storage !== "undefined" && window.storage){
+      try{ await window.storage.set(k,s); return; }catch(e){}
+    }
+    try{ localStorage.setItem(k,s); return; }catch(e){}
+    mem[k] = v;
+  }
+};
+async function loadState(){ const v = await store.get("pyquest_v2"); if(v) S = Object.assign(S,v); paintStats(); paintHome(); }
+async function saveState(){ await store.set("pyquest_v2", S); }
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function touchStreak(){
+  const t = todayStr();
+  if (S.lastDay === t) return;
+  const y = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  S.streak = (S.lastDay === y) ? S.streak + 1 : 1;
+  S.lastDay = t;
+}
+function levelFor(xp){ let L = LEVELS[0]; for(const l of LEVELS){ if(xp >= l.at) L = l; } return L; }
+function addXP(n, anchorEl){
+  const before = levelFor(S.xp);
+  S.xp += n; touchStreak(); saveState(); paintStats();
+  const chip = document.getElementById("xpChip");
+  chip.classList.remove("bump"); void chip.offsetWidth; chip.classList.add("bump");
+  if (anchorEl) coinBurst(anchorEl);
+  toast("+" + n + " XP");
+  const after = levelFor(S.xp);
+  if (after.name !== before.name){
+    document.getElementById("luBadge").textContent = after.badge;
+    document.getElementById("luTitle").textContent = "Level up: " + after.name;
+    document.getElementById("luText").textContent = S.xp + " XP and climbing. New title unlocked.";
+    setTimeout(()=>{ document.getElementById("levelup").style.display = "grid"; }, 650);
+  }
+}
+function paintStats(){
+  document.getElementById("xpVal").textContent = S.xp;
+  document.getElementById("streakVal").textContent = S.streak;
+  document.getElementById("lvlName").textContent = levelFor(S.xp).name;
+  document.getElementById("lvlChip").firstChild.textContent = levelFor(S.xp).badge + " ";
+}
+
+/* ============================ FX ============================ */
+function coinBurst(el){
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  for(let i=0;i<10;i++){
+    const c = document.createElement("div"); c.className = "coin";
+    c.style.left = cx+"px"; c.style.top = cy+"px";
+    document.body.appendChild(c);
+    const ang = (Math.PI * (0.15 + 0.7*Math.random())) + Math.PI;
+    const dist = 60 + Math.random()*90;
+    const dx = Math.cos(ang)*dist, dy = Math.sin(ang)*dist;
+    c.animate(
+      [{transform:"translate(0,0) scale(1)", opacity:1},
+       {transform:"translate("+dx+"px,"+dy+"px) scale(.5)", opacity:0}],
+      {duration:700+Math.random()*300, easing:"cubic-bezier(.2,.8,.3,1)"}
+    ).onfinish = ()=>c.remove();
+  }
+}
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), 1600);
+}
+
+/* ============================ PYODIDE ENGINE ============================ */
+let pyodide = null, engineReady = false, engineState = "loading", engineBooting = false;
+/* Official Pyodide CDN (jsdelivr) first — see pyodide.org docs. The npm/cdnjs
+   mirrors do NOT include the WASM runtime, so they are not used as indexURL. */
+const PYO_CDNS = [
+  "https://cdn.jsdelivr.net/pyodide/v0.29.4/full/",
+  "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"
+];
+function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement("script"); s.src=src; s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
+async function bootEngine(){
+  if (engineBooting || engineReady) return;
+  engineBooting = true; engineState = "loading";
+  const dot = document.getElementById("engDot"), txt = document.getElementById("engText");
+  dot.className = "dot loading"; txt.textContent = "Warming up the Python engine (~10 MB, first visit only)…";
+  for (const base of PYO_CDNS){
+    try{
+      await loadScript(base + "pyodide.js");
+      pyodide = await loadPyodide({ indexURL: base });
+      engineReady = true; engineState = "ready"; engineBooting = false;
+      dot.className = "dot ready"; txt.textContent = "Python engine ready — code runs on your device.";
+      toast("Python engine ready 🐍");
+      return;
+    }catch(e){ console.warn("pyodide failed at " + base, e); }
+  }
+  engineBooting = false; engineState = "error";
+  dot.className = "dot err";
+  txt.textContent = "Couldn't load the Python engine — check your internet, then tap any Run button to retry.";
+}
+function engineGate(){
+  if (engineState === "error"){ toast("Retrying the Python engine…"); bootEngine(); }
+  else toast("Python is still loading (~10 MB on first visit) — a few more seconds…");
+}
+async function runPython(code, inputs){
+  const out = [];
+  pyodide.setStdout({ batched: s => out.push(s) });
+  pyodide.setStderr({ batched: s => out.push(s) });
+  const ns = pyodide.globals.get("dict")();
+  const preamble =
+"import builtins, json, sys\n" +
+"__q = json.loads('" + JSON.stringify(inputs||[]).replace(/\\/g,"\\\\").replace(/'/g,"\\'") + "')\n" +
+"def __inp(prompt=\"\"):\n" +
+"    print(str(prompt), end=\"\")\n" +
+"    v = str(__q.pop(0)) if __q else \"\"\n" +
+"    print(v)\n" +
+"    return v\n" +
+"builtins.input = __inp\n" +
+"__steps = [0]\n" +
+"def __tr(frame, event, arg):\n" +
+"    if event == 'line':\n" +
+"        __steps[0] += 1\n" +
+"        if __steps[0] > 300000:\n" +
+"            raise RuntimeError('PYQUEST_TIMEOUT')\n" +
+"    return __tr\n" +
+"sys.settrace(__tr)\n" +
+"sys._getframe().f_trace = __tr\n"; /* also trace the top-level frame: settrace alone only starts at the next function call */
+  try{
+    await pyodide.runPythonAsync(preamble + "\n" + code, { globals: ns });
+    return { ok:true, out: out.join("\n") };
+  }catch(err){
+    return { ok:false, out: out.join("\n"), err: String(err.message || err) };
+  }finally{
+    try{ pyodide.runPython("import sys; sys.settrace(None)"); }catch(e){}
+    try{ ns.destroy(); }catch(e){}
+  }
+}
+function friendlyError(raw){
+  if (raw.includes("PYQUEST_TIMEOUT")){
+    return { headline:"Your program ran too long — almost certainly an infinite loop. Does your while condition ever become False? Is something inside the loop changing?", detail:"Stopped automatically after 300,000 steps." };
+  }
+  const m = raw.match(/(\w*Error|\w*Exception)(:[^\n]*)?/g);
+  const last = m ? m[m.length-1] : "";
+  const lineM = raw.match(/line (\d+)/g);
+  const ln = lineM ? lineM[lineM.length-1] : null;
+  let hint = "Python stopped. Read the message below — it usually names the problem.";
+  if (/SyntaxError/.test(last)) hint = "Python couldn't read that line. Check for a missing quote, bracket, or colon at the end of if/for/while/def lines.";
+  else if (/NameError/.test(last)) hint = "You used a name Python hasn't seen yet. Spelling and CAPITALS matter.";
+  else if (/IndentationError|TabError/.test(last)) hint = "Python is strict about spaces at the start of a line. Lines inside if/for/while/def need exactly one extra level of indent (4 spaces).";
+  else if (/TypeError/.test(last)) hint = "You mixed types — like math on text. Did you forget int() around an input()?";
+  else if (/ValueError/.test(last)) hint = "A value couldn't be converted — int() only works on text that looks like a whole number.";
+  else if (/IndexError/.test(last)) hint = "You asked for a list position that doesn't exist. Remember: positions start at 0.";
+  return { headline: hint, detail: (ln ? ln + " · " : "") + (last || raw.split("\n").slice(-3).join(" ")) };
+}
+
+/* ============================ HOME ============================ */
+let curM = 0, curL = 0, curStep = 0, stepArmed = false;
+
+function moduleDone(m){ return m.lessons.every(l => !!S.done[l.id]); }
+function moduleUnlocked(i){ return i === 0 || moduleDone(MODULES[i-1]); }
+function courseDone(){ return MODULES.every(moduleDone); }
+
+function showTab(t){
+  document.getElementById("tabLearn").classList.toggle("on", t==="learn");
+  document.getElementById("tabPlay").classList.toggle("on", t==="play");
+  document.getElementById("paneLearn").classList.toggle("hidden", t!=="learn");
+  document.getElementById("panePlay").classList.toggle("hidden", t!=="play");
+}
+function paintHome(){
+  // certificate banner
+  const cb = document.getElementById("certBannerHost");
+  if (courseDone()){
+    cb.innerHTML = '<div class="cert-banner"><div>🏆</div><div><div class="t">Course complete!</div><p>All 6 modules, every check passed.</p></div>' +
+      '<button class="btn btn-gold" onclick="' + (S.certName ? "showCert()" : "document.getElementById('claimCert').style.display='grid'") + '">' +
+      (S.certName ? "View certificate" : "Claim certificate") + '</button></div>';
+  } else cb.innerHTML = "";
+
+  const host = document.getElementById("moduleHost"); host.innerHTML = "";
+  MODULES.forEach((M, mi)=>{
+    const unlocked = moduleUnlocked(mi);
+    const doneCount = M.lessons.filter(l=>S.done[l.id]).length;
+    const pct = Math.round(100*doneCount/M.lessons.length);
+    const div = document.createElement("div");
+    div.className = "module" + (unlocked ? "" : " locked");
+    let head = '<div class="module-head"><div class="module-eyebrow">Module ' + M.num + (unlocked ? "" : " · locked") + '</div><h2>' + M.title + '</h2>';
+    if (unlocked) head += '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div><div class="module-meta">' + doneCount + ' of ' + M.lessons.length + ' lessons · ' + pct + '%</div>';
+    head += '</div>';
+    div.innerHTML = head;
+    if (unlocked){
+      M.lessons.forEach((L, li)=>{
+        const done = !!S.done[L.id];
+        const prevDone = li === 0 || !!S.done[M.lessons[li-1].id];
+        const b = document.createElement("button");
+        b.className = "lesson-row"; b.disabled = !prevDone && !done;
+        b.innerHTML = '<div class="ring ' + (L.boss?"boss ":"") + (done?"done":"") + '">' + (done?"✓":(L.boss?"⚔":li+1)) + '</div>' +
+          '<div><div class="lesson-title">' + L.title + '</div><div class="lesson-sub">' + L.sub + '</div></div>' +
+          '<div class="lesson-xp">' + (done?"earned":"+"+L.xp+" XP") + '</div>';
+        b.onclick = ()=>openLesson(mi, li);
+        div.appendChild(b);
+      });
+    } else {
+      const note = document.createElement("div");
+      note.className = "locked-note";
+      note.textContent = "Beat Module " + (M.num-1) + "'s boss to unlock.";
+      div.appendChild(note);
+    }
+    host.appendChild(div);
+  });
+}
+function goHome(){
+  document.getElementById("viewLesson").classList.add("hidden");
+  document.getElementById("bottomNav").classList.add("hidden");
+  document.getElementById("certView").style.display = "none";
+  document.getElementById("viewHome").classList.remove("hidden");
+  paintHome();
+  window.scrollTo({top:0});
+}
+function openLesson(mi, li){
+  curM = mi; curL = li; curStep = 0;
+  document.getElementById("viewHome").classList.add("hidden");
+  document.getElementById("viewLesson").classList.remove("hidden");
+  document.getElementById("bottomNav").classList.remove("hidden");
+  renderStep();
+}
+
+/* ============================ LESSON FLOW ============================ */
+function armContinue(on){
+  stepArmed = on;
+  document.getElementById("btnNext").classList.toggle("armed", on);
+}
+function prevStep(){ if(curStep>0){ curStep--; renderStep(); } else goHome(); }
+function nextStep(){
+  if(!stepArmed) return;
+  const L = MODULES[curM].lessons[curL];
+  if (curStep < L.steps.length-1){ curStep++; renderStep(); }
+  else {
+    if(!S.done[L.id]){ S.done[L.id] = true; saveState(); }
+    goHome(); toast("Lesson complete: " + L.title + " ✓");
+  }
+}
+function escapeHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function renderStep(){
+  const L = MODULES[curM].lessons[curL], st = L.steps[curStep], host = document.getElementById("stepHost");
+  const dots = document.getElementById("stepDots"); dots.innerHTML = "";
+  L.steps.forEach((_,i)=>{ const d=document.createElement("div"); d.className="sdot"+(i===curStep?" on":(i<curStep?" past":"")); dots.appendChild(d); });
+  document.getElementById("btnNext").textContent = (curStep === L.steps.length-1) ? "Finish lesson ✓" : "Continue";
+  window.scrollTo({top:0});
+
+  if (st.type === "learn"){
+    host.innerHTML = '<div class="card"><h3>' + st.title + '</h3>' +
+      '<div class="learn-body">' + st.body.map(p=>"<p>"+p+"</p>").join("") + '</div>' +
+      (st.example ? '<div class="example"><pre>' + escapeHtml(st.example) + '</pre>' +
+        '<div class="example-bar"><button class="btn-run-mini" onclick="runExample(this)">▸ Run</button></div>' +
+        '<div class="example-out"></div></div>' : '') +
+      '</div>';
+    if (st.example){
+      const b = host.querySelector(".btn-run-mini");
+      b.dataset.code = st.example;
+      b.dataset.inputs = JSON.stringify(st.exampleInputs||[]);
+    }
+    armContinue(true);
+  }
+
+  if (st.type === "quiz"){
+    const key = L.id + "_s" + curStep;
+    host.innerHTML = '<div class="card"><h3>' + st.title + '</h3>' +
+      '<p style="margin-top:10px">' + st.q + '</p>' +
+      '<div class="quiz-opts">' + st.opts.map((o,i)=>'<button class="opt" data-i="'+i+'">'+escapeHtml(o)+'</button>').join("") + '</div>' +
+      '<div class="quiz-why">' + st.why + '</div></div>';
+    let firstTry = true;
+    host.querySelectorAll(".opt").forEach(btn=>{
+      btn.onclick = ()=>{
+        const i = +btn.dataset.i;
+        if (i === st.answer){
+          btn.classList.add("correct");
+          host.querySelector(".quiz-why").style.display = "block";
+          host.querySelectorAll(".opt").forEach(b=>b.onclick=null);
+          if (firstTry && !S.quizDone[key]){ S.quizDone[key] = true; addXP(5, btn); } else saveState();
+          armContinue(true);
+        } else {
+          btn.classList.add("wrong"); firstTry = false;
+          setTimeout(()=>btn.classList.remove("wrong"), 500);
+        }
+      };
+    });
+    armContinue(!!S.quizDone[key]);
+  }
+
+  if (st.type === "code"){
+    host.innerHTML = '<div class="card"><h3>' + st.title + '</h3>' +
+      '<div class="task">' + st.task + '</div>' +
+      '<textarea class="editor" id="codeEd" spellcheck="false" autocapitalize="off" autocomplete="off">' + escapeHtml(st.starter||"") + '</textarea>' +
+      '<div class="run-row">' +
+        '<button class="btn btn-primary" id="btnCheck" onclick="checkChallenge()">Run &amp; check ▸</button>' +
+        '<button class="btn-hint" onclick="document.getElementById(\'hintBox\').style.display=\'block\'">Need a hint?</button>' +
+      '</div>' +
+      '<div class="console" id="codeOut"></div>' +
+      '<div class="verdict" id="verdict"></div>' +
+      '<div class="hint-box" id="hintBox">💡 <pre style="white-space:pre-wrap; font-size:.85em; margin-top:4px">' + escapeHtml(st.hint||"") + '</pre></div>' +
+      '</div>';
+    const ed = document.getElementById("codeEd");
+    ed.addEventListener("keydown", e=>{
+      if(e.key==="Tab"){ e.preventDefault();
+        const s=ed.selectionStart, t=ed.selectionEnd;
+        ed.value = ed.value.slice(0,s)+"    "+ed.value.slice(t);
+        ed.selectionStart = ed.selectionEnd = s+4;
+      }
+    });
+    armContinue(!!S.done[L.id]);
+  }
+}
+
+async function runExample(btn){
+  if (!engineReady){ engineGate(); return; }
+  const out = btn.closest(".example").querySelector(".example-out");
+  out.style.display = "block"; out.textContent = "…";
+  const r = await runPython(btn.dataset.code, JSON.parse(btn.dataset.inputs||"[]"));
+  out.textContent = r.ok ? (r.out || "(no output)") : (r.out + "\n" + (r.err||""));
+}
+
+async function checkChallenge(){
+  if (!engineReady){ engineGate(); return; }
+  const L = MODULES[curM].lessons[curL], st = L.steps[curStep];
+  const code = document.getElementById("codeEd").value;
+  const btn = document.getElementById("btnCheck");
+  const con = document.getElementById("codeOut");
+  const ver = document.getElementById("verdict");
+  btn.disabled = true; btn.textContent = "Running…";
+  const r = await runPython(code, st.inputs||[]);
+  btn.disabled = false; btn.innerHTML = "Run &amp; check ▸";
+
+  con.style.display = "block";
+  con.innerHTML = '<span class="lbl">Output</span>' + escapeHtml(r.out || "(no output)");
+
+  if (!r.ok){
+    const fe = friendlyError(r.err||"");
+    ver.className = "verdict fail"; ver.style.display = "block";
+    ver.innerHTML = '<span class="big">Not yet — Python hit an error</span>' + fe.headline +
+      '<br><code style="font-size:.8em; opacity:.8">' + escapeHtml(fe.detail) + '</code>';
+    return;
+  }
+  const got = (r.out||"").trim();
+  for (const c of (st.checks||[])){
+    let pass = true;
+    if (c.kind === "output"){
+      pass = (c.mode === "exact") ? (got === c.value) : got.includes(c.value);
+    } else if (c.kind === "code"){
+      if (c.contains) pass = code.includes(c.contains);
+      if (c.containsAny) pass = c.containsAny.some(x=>code.includes(x));
+    }
+    if (!pass){
+      ver.className = "verdict fail"; ver.style.display = "block";
+      ver.innerHTML = '<span class="big">So close — one check failed</span>' + escapeHtml(c.msg);
+      return;
+    }
+  }
+  ver.className = "verdict pass"; ver.style.display = "block";
+  const first = !S.done[L.id];
+  ver.innerHTML = '<span class="big">✓ Passed!</span>' + (first ? "Nice. That's real Python you just wrote." : "Still works. Showing off now.");
+  if (first){ S.done[L.id] = true; addXP(L.xp, btn); }
+  saveState();
+  armContinue(true);
+}
+
+async function runPlayground(){
+  if (!engineReady){ engineGate(); return; }
+  const out = document.getElementById("playOut");
+  out.style.display = "block"; out.innerHTML = '<span class="lbl">Output</span>…';
+  const r = await runPython(document.getElementById("playEditor").value, []);
+  let txt = escapeHtml(r.out || "(no output)");
+  if (!r.ok){ const fe = friendlyError(r.err||""); txt += "\n\n⚠ " + escapeHtml(fe.headline) + "\n" + escapeHtml(fe.detail); }
+  out.innerHTML = '<span class="lbl">Output</span>' + txt;
+}
+
+/* ============================ CERTIFICATE ============================ */
+function claimCertificate(){
+  const name = document.getElementById("claimName").value.trim();
+  if (!name) return;
+  S.certName = name;
+  S.certDate = new Date().toLocaleDateString("en-IN", {year:"numeric", month:"long", day:"numeric"});
+  saveState();
+  document.getElementById("claimCert").style.display = "none";
+  showCert();
+}
+function showCert(){
+  document.getElementById("certName").textContent = S.certName || "—";
+  document.getElementById("certDate").textContent = "Completed on " + (S.certDate || "");
+  document.getElementById("viewHome").classList.add("hidden");
+  document.getElementById("certView").style.display = "block";
+  window.scrollTo({top:0});
+}
+function hideCert(){
+  document.getElementById("certView").style.display = "none";
+  document.getElementById("viewHome").classList.remove("hidden");
+}
+
+/* ============================ RESET ============================ */
+let resetArmed = false, resetTimer = null;
+async function resetProgress(btn){
+  if (!resetArmed){
+    resetArmed = true; btn.textContent = "Tap again to confirm reset";
+    resetTimer = setTimeout(()=>{ resetArmed = false; btn.textContent = "Reset all progress"; }, 4000);
+    return;
+  }
+  clearTimeout(resetTimer); resetArmed = false;
+  S = { xp:0, streak:0, lastDay:null, done:{}, quizDone:{}, certName:null, certDate:null };
+  await saveState(); paintStats(); paintHome();
+  btn.textContent = "Reset all progress";
+  toast("Fresh start. 🐣");
+}
+
+/* boot */
+loadState();
+bootEngine();
+</script>
+</body>
+</html>
