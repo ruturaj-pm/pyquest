@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Step-up & Flat EMI Calculator</title>
+<style>
+  :root{
+    --bg:#f7f6f3;--surface:#fff;--surface2:#f1efe9;--line:#e3e0d8;--text:#1f1e1c;--muted:#6b6962;
+    --accent:#534ab7;--accent2:#888780;--info-bg:#eeedfe;--info-text:#3c3489;
+    --good-bg:#e1f5ee;--good-text:#0f6e56;--warn-bg:#fceaea;--warn-text:#a32d2d;--radius:12px;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#1a1917;--surface:#262421;--surface2:#2f2d29;--line:#3a3833;--text:#f1efe9;--muted:#a8a59c;
+    --accent:#afa9ec;--accent2:#b4b2a9;--info-bg:#26215c;--info-text:#cecbf6;
+    --good-bg:#04342c;--good-text:#9fe1cb;--warn-bg:#501313;--warn-text:#f7c1c1;}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);line-height:1.55;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:24px 16px 56px}
+  h1{font-size:22px;font-weight:600;margin:0 0 4px}
+  h2{font-size:16px;font-weight:600;margin:30px 0 10px}
+  .sub{font-size:14px;color:var(--muted);margin:0 0 20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:6px}
+  .field label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px}
+  .field .rl{display:flex;justify-content:space-between}
+  .field .rl .v{color:var(--text);font-weight:600}
+  input[type=number]{width:100%;padding:9px 11px;font-size:16px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text)}
+  input[type=range]{width:100%;accent-color:var(--accent);height:24px}
+  .warn{background:var(--warn-bg);color:var(--warn-text);border-radius:8px;padding:10px 13px;font-size:13px;margin:16px 0 0;display:none}
+  table.sum{border-collapse:collapse;width:100%;margin:18px 0 6px;font-size:14px}
+  table.sum td,table.sum th{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right}
+  table.sum th{font-size:12px;color:var(--muted);font-weight:500}
+  table.sum td:first-child,table.sum th:first-child{text-align:left;color:var(--muted)}
+  table.sum td.val{font-weight:600;color:var(--text)}
+  table.sum tr.save td.val{color:var(--good-text)}
+  .legend{display:flex;gap:18px;font-size:12px;color:var(--muted);margin:4px 0 4px}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .sw{width:11px;height:11px;border-radius:2px;display:inline-block}
+  .chart-box{width:100%;margin-bottom:8px;color:var(--muted)}
+  .chart-box svg{width:100%;height:auto;display:block}
+  .seg{display:inline-flex;gap:8px;margin:6px 0 10px}
+  .seg button{font-size:13px;padding:8px 16px;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;cursor:pointer}
+  .seg button.active{border-color:var(--accent);color:var(--accent);background:var(--info-bg)}
+  .tbl-scroll{overflow:auto;max-height:460px;border:1px solid var(--line);border-radius:var(--radius)}
+  table.sched{border-collapse:collapse;width:100%;font-size:13px;min-width:640px}
+  table.sched th{position:sticky;top:0;background:var(--surface2);font-size:11px;color:var(--muted);font-weight:500;padding:8px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+  table.sched td{padding:6px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+  table.sched th:first-child,table.sched td:first-child{text-align:left}
+  table.sched input{width:92px;padding:5px 7px;font-size:13px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--accent);text-align:right}
+  tr.yearend td{border-bottom:1px solid var(--accent2)}
+  td.neg{color:var(--warn-text)}
+  td.saved{color:var(--good-text)}
+  .note{font-size:12px;color:var(--muted);margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Step-up &amp; Flat EMI Calculator</h1>
+  <p class="sub">Monthly schedule (up to 360 months) with a prepayment box on every row. Change any input or enter a prepayment in any month; the schedule, payoff, charts and savings recompute instantly. The same prepayment plan applies to both loan types for a fair comparison.</p>
+
+  <div class="grid">
+    <div class="field"><label for="loan">Loan amount (₹)</label><input type="number" id="loan" value="7000000" min="0" step="50000"></div>
+    <div class="field"><div class="rl"><label>Interest rate (p.a.)</label><span class="v" id="rateOut">8.50%</span></div><input type="range" id="rate" min="6" max="14" step="0.05" value="8.5"></div>
+    <div class="field"><div class="rl"><label>Tenure (years)</label><span class="v" id="tenureOut">25</span></div><input type="range" id="tenure" min="5" max="30" step="1" value="25"></div>
+    <div class="field"><div class="rl"><label>Annual EMI step-up</label><span class="v" id="stepOut">5%</span></div><input type="range" id="step" min="0" max="15" step="0.5" value="5"></div>
+  </div>
+  <div class="warn" id="warn"></div>
+
+  <table class="sum">
+    <thead><tr><th></th><th>Step-up</th><th>Flat</th></tr></thead>
+    <tbody>
+      <tr><td>First-year EMI</td><td class="val" id="s_e1"></td><td class="val" id="f_e1"></td></tr>
+      <tr><td>Final-year EMI</td><td class="val" id="s_ef"></td><td class="val" id="f_ef"></td></tr>
+      <tr><td>Total interest (with prepay)</td><td class="val" id="s_int"></td><td class="val" id="f_int"></td></tr>
+      <tr class="save"><td>Interest saved by prepaying</td><td class="val" id="s_sav"></td><td class="val" id="f_sav"></td></tr>
+      <tr><td>Loan closes in</td><td class="val" id="s_pay"></td><td class="val" id="f_pay"></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Outstanding balance (with prepayments)</h2>
+  <div class="legend">
+    <span><span class="sw" style="background:#534ab7"></span>Step-up</span>
+    <span><span class="sw" style="background:#888780"></span>Flat</span>
+  </div>
+  <div class="chart-box" id="balChart"></div>
+
+  <h2>Cumulative interest saved from prepayments</h2>
+  <div class="legend">
+    <span><span class="sw" style="background:#1d9e75"></span>Step-up</span>
+    <span><span class="sw" style="background:#ba7517"></span>Flat</span>
+  </div>
+  <div class="chart-box" id="savChart"></div>
+
+  <h2>Month-by-month schedule</h2>
+  <div class="seg">
+    <button id="viewStep" onclick="setView('step')">Step-up</button>
+    <button id="viewFlat" onclick="setView('flat')">Flat</button>
+  </div>
+  <div class="tbl-scroll">
+    <table class="sched">
+      <thead><tr><th>Month</th><th>Yr</th><th>Opening</th><th>EMI</th><th>Interest</th><th>Principal</th><th>Prepayment</th><th>Closing</th><th>Cum interest</th><th>Saved</th></tr></thead>
+      <tbody id="sbody"></tbody>
+    </table>
+  </div>
+
+  <p class="note">Prepayment is modeled as tenure reduction: the EMI schedule is unchanged and the loan finishes earlier, which saves the most interest. "Saved" is measured against the same loan with no prepayments. A step-up Year-1 EMI below the first month's interest means negative amortization (balance rises early) - lower the step-up % or tenure to avoid it. Floating-rate home loans to individuals carry no prepayment penalty under current RBI rules; fixed-rate loans may. Not financial advice.</p>
+</div>
+
+<script>
+(function(){
+  var view='step', cells=[], lastN=0, prepay={};
+  function $(id){return document.getElementById(id);}
+  function fmt(x){x=Math.round(x);return (x<0?'-₹':'₹')+Math.abs(x).toLocaleString('en-IN');}
+  function fmtShort(x){var n=Math.abs(x),s=x<0?'-':'';
+    if(n>=1e7)return s+'₹'+(n/1e7).toFixed(2)+'Cr';
+    if(n>=1e5)return s+'₹'+(n/1e5).toFixed(1)+'L';
+    return s+'₹'+Math.round(n).toLocaleString('en-IN');}
+  function fmtTime(m){var y=Math.floor(m/12),mo=m%12;return (y?y+'y ':'')+(mo?mo+'m':(y?'':'0m'));}
+
+  function inputs(){return {P:parseFloat($('loan').value)||0,r:parseFloat($('rate').value)/100/12,
+    years:parseInt($('tenure').value,10),g:parseFloat($('step').value)/100};}
+
+  function emiBases(P,r,years,g){
+    var n=years*12;
+    var flat=r===0?P/n:P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+    var a12=r===0?12:(1-Math.pow(1+r,-12))/r;
+    var q=(1+g)/Math.pow(1+r,12);
+    var S=Math.abs(1-q)<1e-9?years:(1-Math.pow(q,years))/(1-q);
+    var e1=P/(a12*S);
+    return {flat:flat,e1:e1,n:n};
+  }
+  function compute(type,pmap){
+    var inp=inputs(),P=inp.P,r=inp.r,years=inp.years,g=inp.g;
+    var b=emiBases(P,r,years,g),n=b.n,bal=P,cum=0,rows=[],cumArr=[],payoff=0;
+    for(var m=1;m<=n;m++){
+      if(bal<=0.5){rows.push({op:0,emi:0,int:0,pr:0,pre:0,cl:0});cumArr.push(cum);continue;}
+      var emi=type==='step'?b.e1*Math.pow(1+g,Math.floor((m-1)/12)):b.flat;
+      var interest=bal*r, principal=emi-interest;
+      if(principal>bal)principal=bal;
+      var afterEmi=bal-principal;
+      var applied=Math.min(pmap[m]||0,Math.max(afterEmi,0));
+      var closing=Math.max(afterEmi-applied,0);
+      cum+=interest;
+      rows.push({op:bal,emi:emi,int:interest,pr:principal,pre:applied,cl:closing});
+      cumArr.push(cum); payoff=m; bal=closing;
+    }
+    return {rows:rows,cum:cumArr,total:cum,payoff:payoff,e1:b.e1,flat:b.flat,n:n,ef:b.e1*Math.pow(1+g,years-1)};
+  }
+
+  function buildTable(n){
+    var html='';
+    for(var m=1;m<=n;m++){
+      html+='<tr'+(m%12===0?' class="yearend"':'')+'><td>'+m+'</td><td>'+(Math.floor((m-1)/12)+1)+'</td>'
+        +'<td id="o'+m+'"></td><td id="e'+m+'"></td><td id="i'+m+'"></td><td id="p'+m+'"></td>'
+        +'<td><input type="number" min="0" step="10000" id="pre'+m+'" data-m="'+m+'" value="'+(prepay[m]||0)+'"></td>'
+        +'<td id="c'+m+'"></td><td id="ci'+m+'"></td><td id="cs'+m+'"></td></tr>';
+    }
+    $('sbody').innerHTML=html;
+    cells=[];
+    for(var k=1;k<=n;k++){
+      cells[k]={o:$('o'+k),e:$('e'+k),i:$('i'+k),p:$('p'+k),c:$('c'+k),ci:$('ci'+k),cs:$('cs'+k)};
+      $('pre'+k).addEventListener('input',onPre);
+    }
+    lastN=n;
+  }
+  function onPre(e){prepay[parseInt(e.target.dataset.m,10)]=parseFloat(e.target.value)||0;refresh();}
+
+  function svgChart(elId,series,n,baseColor){
+    var W=600,H=240,pl=58,pr=14,pt=12,pb=26;
+    var ymax=0;
+    series.forEach(function(s){s.data.forEach(function(v){if(v>ymax)ymax=v;});});
+    if(ymax<=0)ymax=1;
+    var niceMax=ymax;
+    function X(i){return pl+(n<=1?0:(i/(n-1))*(W-pl-pr));}
+    function Y(v){return (H-pb)-(v/niceMax)*(H-pt-pb);}
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="color:var(--muted)" xmlns="http://www.w3.org/2000/svg">';
+    for(var t=0;t<=4;t++){
+      var gv=niceMax*t/4, gy=Y(gv);
+      svg+='<line x1="'+pl+'" y1="'+gy+'" x2="'+(W-pr)+'" y2="'+gy+'" stroke="currentColor" stroke-opacity="0.18"/>';
+      svg+='<text x="'+(pl-6)+'" y="'+(gy+3)+'" font-size="10" fill="currentColor" text-anchor="end">'+fmtShort(gv)+'</text>';
+    }
+    var yrs=Math.floor(n/12), stepY=Math.max(1,Math.ceil(yrs/8));
+    for(var y=stepY;y<=yrs;y+=stepY){
+      var mi=y*12-1, xx=X(mi);
+      svg+='<line x1="'+xx+'" y1="'+pt+'" x2="'+xx+'" y2="'+(H-pb)+'" stroke="currentColor" stroke-opacity="0.07"/>';
+      svg+='<text x="'+xx+'" y="'+(H-pb+14)+'" font-size="10" fill="currentColor" text-anchor="middle">'+y+'</text>';
+    }
+    svg+='<text x="'+((pl+W-pr)/2)+'" y="'+(H-2)+'" font-size="10" fill="currentColor" text-anchor="middle">Year</text>';
+    series.forEach(function(s){
+      var pts='';
+      for(var i=0;i<n;i++){pts+=(i?' ':'')+X(i).toFixed(1)+','+Y(s.data[i]).toFixed(1);}
+      svg+='<polyline points="'+pts+'" fill="none" stroke="'+s.color+'" stroke-width="2"'+(s.dash?' stroke-dasharray="6 4"':'')+'/>';
+    });
+    svg+='</svg>';
+    $(elId).innerHTML=svg;
+  }
+
+  function refresh(){
+    var n=inputs().years*12;
+    if(n!==lastN)buildTable(n);
+    var sA=compute('step',prepay),sB=compute('step',{});
+    var fA=compute('flat',prepay),fB=compute('flat',{});
+
+    $('s_e1').textContent=fmt(sA.e1);$('f_e1').textContent=fmt(fA.flat);
+    $('s_ef').textContent=fmt(sA.ef);$('f_ef').textContent=fmt(fA.flat);
+    $('s_int').textContent=fmt(sA.total);$('f_int').textContent=fmt(fA.total);
+    $('s_sav').textContent=fmt(sB.total-sA.total);$('f_sav').textContent=fmt(fB.total-fA.total);
+    $('s_pay').textContent=fmtTime(sA.payoff);$('f_pay').textContent=fmtTime(fA.payoff);
+
+    var inp=inputs(),firstInt=inp.P*inp.r,w=$('warn');
+    if(sA.e1<firstInt){w.style.display='block';
+      w.textContent='Negative amortization: the step-up Year-1 EMI ('+fmt(sA.e1)+') is below the first month\u2019s interest ('+fmt(firstInt)+'), so the balance rises before it falls. Lower the step-up % or tenure to avoid it.';
+    }else{w.style.display='none';}
+
+    var A=view==='step'?sA:fA, B=view==='step'?sB:fB;
+    for(var m=1;m<=A.n;m++){
+      var rw=A.rows[m-1],c=cells[m];if(!c)continue;
+      c.o.textContent=fmt(rw.op);c.e.textContent=fmt(rw.emi);c.i.textContent=fmt(rw.int);
+      c.p.textContent=fmt(rw.pr);c.p.className=rw.pr<0?'neg':'';
+      c.c.textContent=fmt(rw.cl);c.ci.textContent=fmt(A.cum[m-1]);
+      var saved=B.cum[m-1]-A.cum[m-1];
+      c.cs.textContent=saved>0.5?fmt(saved):'\u2014';c.cs.className=saved>0.5?'saved':'';
+    }
+
+    svgChart('balChart',[{data:sA.rows.map(function(r){return r.cl;}),color:'#534ab7'},
+                         {data:fA.rows.map(function(r){return r.cl;}),color:'#888780',dash:true}],sA.n);
+    svgChart('savChart',[{data:sA.cum.map(function(v,i){return sB.cum[i]-v;}),color:'#1d9e75'},
+                         {data:fA.cum.map(function(v,i){return fB.cum[i]-v;}),color:'#ba7517',dash:true}],sA.n);
+  }
+
+  window.setView=function(v){view=v;
+    $('viewStep').className=v==='step'?'active':'';
+    $('viewFlat').className=v==='flat'?'active':'';refresh();};
+
+  ['loan','rate','tenure','step'].forEach(function(id){
+    $(id).addEventListener('input',function(){
+      $('rateOut').textContent=parseFloat($('rate').value).toFixed(2)+'%';
+      $('tenureOut').textContent=$('tenure').value;
+      $('stepOut').textContent=parseFloat($('step').value)+'%';
+      refresh();
+    });
+  });
+
+  prepay[24]=300000;
+  setView('step');
+})();
+</script>
+</body>
+</html>
